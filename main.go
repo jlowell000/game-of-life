@@ -17,29 +17,28 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/widget/material"
-	"github.com/jlowell000/game-of-life/internal/gameoflife"
+	"github.com/jlowell000/game-of-life/internal/imagegenerator"
+	"github.com/jlowell000/game-of-life/internal/random"
 )
 
-const imageSize int = 100
+const imageSize int = 250
 
 var (
-	tag                = new(bool)
-	framesToGen   uint = 0
-	framesGened   uint = 1
-	pressed       bool = false
-	playing       bool = false
-	gameoflifeGen gameoflife.GameOfLifeGenerator
-	// gen           imagegenerator.ImageGenerator
+	tag              = new(bool)
+	framesToGen uint = 0
+	framesGened uint = 1
+	pressed     bool = false
+	playing     bool = false
+	gen         imagegenerator.ImageGenerator
 )
 
 func main() {
-	// _, points := imagegenerator.CreateNewImage(imageSize, imageSize)
-	// gen = &random.RandomImageGenerator{Xmax: imageSize, Ymax: imageSize, Points: points}
-	gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, []image.Point{})
-	// gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, gameoflife.Blinker)
-	// gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, gameoflife.Glider)
-	// gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, gameoflife.PentominoR)
-	// gen = &gameoflifeGen
+	gen = random.NewRandomGenerator(imageSize, imageSize)
+	// gen = gameoflife.NewGameOfLifeGenerator(imageSize, imageSize)
+	// gen = gameoflife.NewGameOfLifeGenerator(imageSize, imageSize, []image.Point{{X: 0, Y: 0}})
+	// gen = gameoflife.NewGameOfLifeGenerator(imageSize, imageSize, gameoflife.Blinker)
+	// gen = gameoflife.NewGameOfLifeGenerator(imageSize, imageSize, gameoflife.Glider)
+	// gen = gameoflife.NewGameOfLifeGenerator(imageSize, imageSize, gameoflife.PentominoR)
 
 	go func() {
 		w := app.NewWindow()
@@ -72,11 +71,11 @@ func run(w *app.Window) error {
 				if framesToGen > 0 {
 					framesToGen--
 				}
-				gameoflifeGen.GenerateNextState()
+				gen.GenerateNextState()
 				framesGened++
 			}
 			createDebug(gtx)
-			drawImage(&ops, gameoflifeGen.GetImageFromState())
+			drawImage(&ops, gen.GetImageFromCurrentState())
 
 			e.Frame(gtx.Ops)
 			nextStep()

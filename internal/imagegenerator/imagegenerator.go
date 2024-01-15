@@ -6,26 +6,26 @@ import (
 )
 
 type ImageGenerator interface {
-	GenerateNextImage() image.Image
-	GetPoints() []image.Point
+	GenerateNextState()
+	GetImageFromCurrentState() image.Image
 }
 
-func CreateNewImage(x, y int) (*image.NRGBA, []image.Point) {
-	image := MakeNRGBASpace(x, y)
-	return image, ImageToArray(image)
+func CreateNewImageAndPoints(x, y int) (*image.NRGBA, []*image.Point) {
+	newImage := CreateNewImage(x, y)
+	return newImage, CreatePoints(newImage)
 }
 
-func ImageToArray(input image.Image) (result []image.Point) {
-	for y := input.Bounds().Min.Y; y < input.Bounds().Max.Y; y++ {
-		for x := input.Bounds().Min.X; x < input.Bounds().Max.X; x++ {
-			result = append(result, image.Point{X: x, Y: y})
+func CreateNewImage(x, y int) *image.NRGBA {
+	return image.NewNRGBA(image.Rect(0, 0, x, y))
+}
+
+func CreatePoints(newImage *image.NRGBA) (points []*image.Point) {
+	for y := newImage.Bounds().Min.Y; y < newImage.Bounds().Max.Y; y++ {
+		for x := newImage.Bounds().Min.X; x < newImage.Bounds().Max.X; x++ {
+			points = append(points, &image.Point{X: x, Y: y})
 		}
 	}
 	return
 }
 
-func MakeNRGBASpace(x, y int) *image.NRGBA {
-	return image.NewNRGBA(image.Rect(0, 0, x, y))
-}
-
-func RandomCoin() bool { return rand.Intn(2) == 0 }
+func RandomCoin() int { return rand.Intn(2) }
