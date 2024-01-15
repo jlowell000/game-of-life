@@ -1,34 +1,39 @@
 package random
 
 import (
-	"image"
 	"image/color"
 	"math/rand"
 
-	"github.com/jlowell000/game-of-life/internal/imagegenerator"
-	"github.com/jlowell000/utils"
+	"github.com/jlowell000/game-of-life/internal/cellularautomata"
 )
 
-type RandomImageGenerator struct {
-	Xmax, Ymax int
-	Points     []image.Point
-}
-
-func (r *RandomImageGenerator) GenerateNextImage() image.Image {
-	newImage, points := imagegenerator.CreateNewImage(r.Xmax, r.Ymax)
-	colors := utils.MapWG(points, func(_ image.Point) color.NRGBA { return getRandomNRGB() })
-
-	for i, p := range points {
-		newImage.Set(p.X, p.Y, colors[i])
+func NewRandomGenerator(xMax, yMax int) *cellularautomata.CellularAutomata[color.NRGBA] {
+	rColor := func() color.NRGBA {
+		r, g, b := rand.Intn(255), rand.Intn(255), rand.Intn(255)
+		return color.NRGBA{R: uint8(r), G: uint8(b), B: uint8(g), A: 255}
 	}
-	return newImage
-}
 
-func (r *RandomImageGenerator) GetPoints() []image.Point {
-	return r.Points
-}
-
-func randomV() uint8 { return uint8(rand.Intn(255)) }
-func getRandomNRGB() color.NRGBA {
-	return color.NRGBA{R: randomV(), G: randomV(), B: randomV(), A: 255}
+	return cellularautomata.NewCellularAutomata(
+		xMax, yMax,
+		/* Rule Function */
+		func(
+			_ *cellularautomata.Cell[color.NRGBA],
+			_ *cellularautomata.CellularAutomata[color.NRGBA],
+		) color.NRGBA {
+			return rColor()
+		},
+		/* Color Function */
+		func(s color.NRGBA) color.NRGBA {
+			return s
+		},
+		/* Out of Bounds Function */
+		cellularautomata.NothingOOB,
+		/* Initial Fill Function */
+		func(
+			_ *cellularautomata.Cell[color.NRGBA],
+			_ *cellularautomata.CellularAutomata[color.NRGBA],
+		) color.NRGBA {
+			return rColor()
+		},
+	)
 }
