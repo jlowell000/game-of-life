@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"math/rand"
 	"os"
 
 	"gioui.org/app"
@@ -18,20 +17,30 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/widget/material"
-	"github.com/jlowell000/utils"
+	"github.com/jlowell000/game-of-life/internal/gameoflife"
 )
 
 const imageSize int = 100
 
 var (
-	tag               = new(bool)
-	framesToGen  uint = 0
-	pressed      bool = false
-	playing      bool = false
-	currentImage image.Image
+	tag                = new(bool)
+	framesToGen   uint = 0
+	framesGened   uint = 1
+	pressed       bool = false
+	playing       bool = false
+	gameoflifeGen gameoflife.GameOfLifeGenerator
+	// gen           imagegenerator.ImageGenerator
 )
 
 func main() {
+	// _, points := imagegenerator.CreateNewImage(imageSize, imageSize)
+	// gen = &random.RandomImageGenerator{Xmax: imageSize, Ymax: imageSize, Points: points}
+	gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, []image.Point{})
+	// gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, gameoflife.Blinker)
+	// gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, gameoflife.Glider)
+	// gameoflifeGen = gameoflife.CreateInitalState(imageSize, imageSize, gameoflife.PentominoR)
+	// gen = &gameoflifeGen
+
 	go func() {
 		w := app.NewWindow()
 		err := run(w)
@@ -45,10 +54,8 @@ func main() {
 
 func run(w *app.Window) error {
 	var ops op.Ops
-
 	nextStep := func() {
 		if !playing {
-
 			return
 		}
 		w.Invalidate()
@@ -60,18 +67,16 @@ func run(w *app.Window) error {
 			return e.Err
 		case system.FrameEvent:
 			gtx := layout.NewContext(&ops, e)
-
 			keylistener(&ops, e.Queue)
-			if playing || framesToGen > 0 {
+			if (playing || framesToGen > 0) && framesGened < 5000 {
 				if framesToGen > 0 {
 					framesToGen--
 				}
-				currentImage = generateImage(imageSize, imageSize)
+				gameoflifeGen.GenerateNextState()
+				framesGened++
 			}
 			createDebug(gtx)
-			if currentImage != nil {
-				drawImage(&ops, currentImage)
-			}
+			drawImage(&ops, gameoflifeGen.GetImageFromState())
 
 			e.Frame(gtx.Ops)
 			nextStep()
@@ -113,7 +118,7 @@ func keylistener(ops *op.Ops, q event.Queue) {
 
 func createDebug(gtx layout.Context) layout.Dimensions {
 	th := material.NewTheme()
-	title := material.Body1(th, fmt.Sprintf("playing: %t; spacePressed:%t; framesToGen: %d", playing, pressed, framesToGen))
+	title := material.Body1(th, fmt.Sprintf("playing: %t; spacePressed:%t; framesToGen: %d; framesGened: %d", playing, pressed, framesToGen, framesGened))
 	maroon := color.NRGBA{R: 255, G: 0, B: 255, A: 255}
 	title.Color = maroon
 	title.Alignment = text.Middle
@@ -123,36 +128,8 @@ func createDebug(gtx layout.Context) layout.Dimensions {
 func drawImage(ops *op.Ops, img image.Image) {
 	imageOp := paint.NewImageOp(img)
 	imageOp.Add(ops)
-	op.Affine(f32.Affine2D{}.Scale(f32.Pt(0, 0), f32.Pt(4, 4))).Add(ops)
+	scaleFactor := float32(1000 / imageSize)
+	op.Affine(f32.Affine2D{}.Scale(f32.Pt(0, 0), f32.Pt(scaleFactor, scaleFactor))).Add(ops)
 	op.Offset(image.Pt(0, 5)).Add(ops)
 	paint.PaintOp{}.Add(ops)
-}
-
-func generateImage(x, y int) image.Image {
-	newImage := makeNRGBASpace(x, y)
-	points := imageToArray(newImage)
-	colors := utils.MapWG(points, func(_ image.Point) color.NRGBA { return getRandomNRGB() })
-
-	for i, p := range points {
-		newImage.Set(p.X, p.Y, colors[i])
-	}
-	return newImage
-}
-
-func imageToArray(input image.Image) (result []image.Point) {
-	for y := input.Bounds().Min.Y; y < input.Bounds().Max.Y; y++ {
-		for x := input.Bounds().Min.X; x < input.Bounds().Max.X; x++ {
-			result = append(result, image.Point{X: x, Y: y})
-		}
-	}
-	return
-}
-
-func makeNRGBASpace(x, y int) *image.NRGBA {
-	return image.NewNRGBA(image.Rect(0, 0, x, y))
-}
-
-func getRandomNRGB() color.NRGBA {
-	f := func() uint8 { return uint8(rand.Intn(255)) }
-	return color.NRGBA{R: f(), G: f(), B: f(), A: 255}
 }
