@@ -3,6 +3,7 @@ package cellularautomata
 import (
 	"image"
 	"image/color"
+	"math"
 
 	"github.com/jlowell000/game-of-life/internal/imagegenerator"
 	"github.com/jlowell000/utils"
@@ -106,10 +107,12 @@ func (ca *CellularAutomata[T]) swapReadWrite() {
 }
 
 func (ca *CellularAutomata[T]) getNeighborCells(c *Cell[T]) (result []*Cell[T]) {
-	for i := c.X - 1; i <= c.X+1; i++ {
-		for j := c.Y - 1; j <= c.Y+1; j++ {
-			if !(i == c.X && j == c.Y) {
-				result = append(result, ca.Bounding(i, j))
+	if c.X >= 0 && c.X < ca.xMax && c.Y >= 0 && c.Y < ca.yMax {
+		for i := c.X - 1; i <= c.X+1; i++ {
+			for j := c.Y - 1; j <= c.Y+1; j++ {
+				if !(i == c.X && j == c.Y) {
+					result = append(result, ca.Bounding(i, j))
+				}
 			}
 		}
 	}
@@ -117,6 +120,12 @@ func (ca *CellularAutomata[T]) getNeighborCells(c *Cell[T]) (result []*Cell[T]) 
 }
 
 func makeCellTable[T any](xMax, yMax int) ([][]*Cell[T], []*Cell[T]) {
+	if xMax < 0 || math.MaxInt <= xMax {
+		xMax = 0
+	}
+	if yMax < 0 || math.MaxInt <= yMax {
+		yMax = 0
+	}
 	cellList := []*Cell[T]{}
 	cellTable := make([][]*Cell[T], xMax)
 	for i := range cellTable {
