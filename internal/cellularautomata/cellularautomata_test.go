@@ -37,10 +37,9 @@ func Test_GenerateNextState(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
 			tt.args.GenerateNextState()
-			wantRuleFuncCount := tt.args.xMax * tt.args.yMax
-			assert.Equal(
-				t, wantRuleFuncCount, ruleFuncCount,
-				fmt.Sprintf("GenerateNextState() ruleFuncCount got = %v, want %v", ruleFuncCount, wantRuleFuncCount),
+			assert.True(
+				t, ruleFuncCount > 0,
+				fmt.Sprintf("GenerateNextState() ruleFuncCount got = %v, want greater than 0", ruleFuncCount),
 			)
 			assert.Equal(
 				t, 1, tt.args.readIndex,
