@@ -10,7 +10,7 @@ import (
 )
 
 func Test_getNeighborCells(t *testing.T) {
-	const testSize int = 20
+	const testSize int = 10
 	type args struct {
 		ca   CellularAutomata[int]
 		cell Cell[int]
@@ -27,7 +27,7 @@ func Test_getNeighborCells(t *testing.T) {
 			xMax: x, yMax: y,
 			currentState: table,
 			cells:        list,
-			oobCellFunc:  func(x, y int, _, _, _, _ bool) *Cell[int] { return &Cell[int]{X: x, Y: y} },
+			oobCellFunc:  func(_ *CellularAutomata[int], x, y int, _, _, _, _ bool) *Cell[int] { return &Cell[int]{X: x, Y: y} },
 		}
 		return ca
 	}

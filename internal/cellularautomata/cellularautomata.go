@@ -27,7 +27,7 @@ type CellularAutomata[T any] struct {
 	currentImage          *image.NRGBA
 	ruleFunc              func(*Cell[T], *CellularAutomata[T]) T
 	colorFunc             func(T) color.NRGBA
-	oobCellFunc           func(int, int, bool, bool, bool, bool) *Cell[T]
+	oobCellFunc           func(*CellularAutomata[T], int, int, bool, bool, bool, bool) *Cell[T]
 	currentState          [][]*Cell[T]
 	cells                 []*Cell[T]
 }
@@ -36,7 +36,7 @@ func NewCellularAutomata[T any](
 	xMax, yMax int,
 	ruleFunc func(*Cell[T], *CellularAutomata[T]) T,
 	colorFunc func(T) color.NRGBA,
-	oobCellFunc func(*CellularAutomata[T]) func(int, int, bool, bool, bool, bool) *Cell[T],
+	oobCellFunc func(*CellularAutomata[T], int, int, bool, bool, bool, bool) *Cell[T],
 	initFillFunc func(*Cell[T], *CellularAutomata[T]) T,
 ) *CellularAutomata[T] {
 	ca := CellularAutomata[T]{
@@ -48,7 +48,7 @@ func NewCellularAutomata[T any](
 		ruleFunc:     ruleFunc,
 		colorFunc:    colorFunc,
 	}
-	ca.oobCellFunc = oobCellFunc(&ca)
+	ca.oobCellFunc = oobCellFunc
 	ca.currentState, ca.cells = makeCellTable[T](xMax, yMax)
 
 	ca.applyRules(ca.ReadIndex, initFillFunc)
@@ -83,8 +83,8 @@ func (ca *CellularAutomata[T]) Bounding(x, y int) *Cell[T] {
 	vIsOob := func(v, vMin, vMax int) (bool, bool) { return v < vMin, v > vMax }
 	xMinOOB, xMaxOOB := vIsOob(x, 0, ca.xMax-1)
 	yMinOOB, yMaxOOB := vIsOob(y, 0, ca.yMax-1)
-	if xMinOOB || xMaxOOB || yMinOOB || yMaxOOB {
-		return ca.oobCellFunc(x, y, xMinOOB, xMaxOOB, yMinOOB, yMaxOOB)
+	if (xMinOOB || xMaxOOB) || (yMinOOB || yMaxOOB) {
+		return ca.oobCellFunc(ca, x, y, xMinOOB, xMaxOOB, yMinOOB, yMaxOOB)
 	}
 	return ca.GetCellAt(x, y)
 }
