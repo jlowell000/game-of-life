@@ -23,7 +23,7 @@ func NewCell[T any](x, y int) *Cell[T] {
 
 type CellularAutomata[T any] struct {
 	xMax, yMax            int
-	ReadIndex, WriteIndex int
+	readIndex, writeIndex int
 	currentImage          *image.NRGBA
 	ruleFunc              func(*Cell[T], *CellularAutomata[T]) T
 	colorFunc             func(T) color.NRGBA
@@ -42,8 +42,8 @@ func NewCellularAutomata[T any](
 	ca := CellularAutomata[T]{
 		xMax:         xMax,
 		yMax:         yMax,
-		ReadIndex:    0,
-		WriteIndex:   1,
+		readIndex:    0,
+		writeIndex:   1,
 		currentImage: imagegenerator.CreateNewImage(xMax, yMax),
 		ruleFunc:     ruleFunc,
 		colorFunc:    colorFunc,
@@ -51,7 +51,7 @@ func NewCellularAutomata[T any](
 	ca.oobCellFunc = oobCellFunc
 	ca.currentState, ca.cells = makeCellTable[T](xMax, yMax)
 
-	ca.applyRules(ca.ReadIndex, initFillFunc)
+	ca.applyRules(ca.readIndex, initFillFunc)
 	utils.ForEachWG(ca.cells, func(c *Cell[T]) { c.Neighbors = ca.getNeighborCells(c) })
 
 	return &ca
@@ -63,7 +63,7 @@ func (ca *CellularAutomata[T]) GetImageFromCurrentState() image.Image {
 		func(c *Cell[T]) {
 			ca.currentImage.Set(
 				c.X, c.Y,
-				ca.colorFunc(c.State[ca.ReadIndex]),
+				ca.colorFunc(c.State[ca.readIndex]),
 			)
 		},
 	)
@@ -71,12 +71,16 @@ func (ca *CellularAutomata[T]) GetImageFromCurrentState() image.Image {
 }
 
 func (ca *CellularAutomata[T]) GenerateNextState() {
-	ca.applyRules(ca.WriteIndex, ca.ruleFunc)
+	ca.applyRules(ca.writeIndex, ca.ruleFunc)
 	ca.swapReadWrite()
 }
 
 func (ca *CellularAutomata[T]) GetCellAt(x, y int) *Cell[T] {
 	return ca.currentState[x][y]
+}
+
+func (ca *CellularAutomata[T]) GetReadWriteIndexes() (readIndex int, writeIndex int) {
+	return ca.readIndex, ca.writeIndex
 }
 
 func (ca *CellularAutomata[T]) Bounding(x, y int) *Cell[T] {
@@ -97,12 +101,12 @@ func (ca *CellularAutomata[T]) applyRules(index int, ruleFunc func(*Cell[T], *Ce
 }
 
 func (ca *CellularAutomata[T]) swapReadWrite() {
-	if ca.ReadIndex == 0 {
-		ca.ReadIndex = 1
-		ca.WriteIndex = 0
+	if ca.readIndex == 0 {
+		ca.readIndex = 1
+		ca.writeIndex = 0
 	} else {
-		ca.ReadIndex = 0
-		ca.WriteIndex = 1
+		ca.readIndex = 0
+		ca.writeIndex = 1
 	}
 }
 

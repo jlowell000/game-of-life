@@ -9,6 +9,74 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_swapReadWrite(t *testing.T) {
+
+	type test struct {
+		name                                  string
+		args                                  CellularAutomata[int]
+		expectedReadIndex, expectedWriteIndex int
+	}
+
+	tests := []test{
+		{
+			name:               "initial readIndex: 0, writeIndex: 1",
+			args:               CellularAutomata[int]{readIndex: 0, writeIndex: 1},
+			expectedReadIndex:  1,
+			expectedWriteIndex: 0,
+		},
+		{
+			name:               "initial readIndex: 1, writeIndex: 0",
+			args:               CellularAutomata[int]{readIndex: 1, writeIndex: 0},
+			expectedReadIndex:  0,
+			expectedWriteIndex: 1,
+		},
+		{
+			name:               "initial readIndex: nil (is treated as 0), writeIndex: 0",
+			args:               CellularAutomata[int]{writeIndex: 0},
+			expectedReadIndex:  1,
+			expectedWriteIndex: 0,
+		},
+		{
+			name:               "initial readIndex: 0, writeIndex: nil",
+			args:               CellularAutomata[int]{readIndex: 0},
+			expectedReadIndex:  1,
+			expectedWriteIndex: 0,
+		},
+		{
+			name:               "initial readIndex: nil (is treated as 0), writeIndex: 1",
+			args:               CellularAutomata[int]{writeIndex: 1},
+			expectedReadIndex:  1,
+			expectedWriteIndex: 0,
+		},
+		{
+			name:               "initial readIndex: 1, writeIndex: nil",
+			args:               CellularAutomata[int]{readIndex: 1},
+			expectedReadIndex:  0,
+			expectedWriteIndex: 1,
+		},
+		{
+			name:               "initial readIndex: nil, writeIndex: nil",
+			args:               CellularAutomata[int]{},
+			expectedReadIndex:  1,
+			expectedWriteIndex: 0,
+		},
+		{
+			name:               "initial readIndex: 123, writeIndex: 123",
+			args:               CellularAutomata[int]{},
+			expectedReadIndex:  1,
+			expectedWriteIndex: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.swapReadWrite()
+			assert.Equal(t, tt.expectedReadIndex, tt.args.readIndex, fmt.Sprintf("swapReadWrite() readIndex got = %v, want %v", tt.args.readIndex, tt.expectedReadIndex))
+			assert.Equal(t, tt.expectedWriteIndex, tt.args.writeIndex, fmt.Sprintf("swapReadWrite() writeIndex got = %v, want %v", tt.args.writeIndex, tt.expectedWriteIndex))
+		})
+	}
+}
+
 func Test_getNeighborCells(t *testing.T) {
 	const testSize int = 10
 	type args struct {
