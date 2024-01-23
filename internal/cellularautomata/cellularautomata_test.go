@@ -9,15 +9,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_swapReadWrite(t *testing.T) {
+func Test_applyRules(t *testing.T) {
+	const testSize int = 10
+	tests := []struct {
+		name       string
+		args       CellularAutomata[int]
+		expectFunc func(*Cell[int]) int
+	}{
+		{
+			name: "initial readIndex: 0, writeIndex: 1",
+			args: CellularAutomata[int]{
+				xMax:       testSize,
+				yMax:       testSize,
+				readIndex:  0,
+				writeIndex: 1,
+				ruleFunc:   func(c *Cell[int], ca *CellularAutomata[int]) int { return c.X * c.Y },
+			},
+			expectFunc: func(c *Cell[int]) int { return c.X * c.Y },
+		},
+	}
 
-	type test struct {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
+			tt.args.applyRules(tt.args.writeIndex, tt.args.ruleFunc)
+			for _, c := range tt.args.cells {
+				want := tt.expectFunc(c)
+				got := c.State[tt.args.writeIndex]
+				assert.Equal(
+					t, want, got,
+					fmt.Sprintf("applyRules() {x:%d, y:%d} got = %v, want %v", c.X, c.Y, got, want),
+				)
+			}
+
+		})
+	}
+}
+
+func Test_swapReadWrite(t *testing.T) {
+	tests := []struct {
 		name                                  string
 		args                                  CellularAutomata[int]
 		expectedReadIndex, expectedWriteIndex int
-	}
-
-	tests := []test{
+	}{
 		{
 			name:               "initial readIndex: 0, writeIndex: 1",
 			args:               CellularAutomata[int]{readIndex: 0, writeIndex: 1},
@@ -71,8 +105,14 @@ func Test_swapReadWrite(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.swapReadWrite()
-			assert.Equal(t, tt.expectedReadIndex, tt.args.readIndex, fmt.Sprintf("swapReadWrite() readIndex got = %v, want %v", tt.args.readIndex, tt.expectedReadIndex))
-			assert.Equal(t, tt.expectedWriteIndex, tt.args.writeIndex, fmt.Sprintf("swapReadWrite() writeIndex got = %v, want %v", tt.args.writeIndex, tt.expectedWriteIndex))
+			assert.Equal(
+				t, tt.expectedReadIndex, tt.args.readIndex,
+				fmt.Sprintf("swapReadWrite() readIndex got = %v, want %v", tt.args.readIndex, tt.expectedReadIndex),
+			)
+			assert.Equal(
+				t, tt.expectedWriteIndex, tt.args.writeIndex,
+				fmt.Sprintf("swapReadWrite() writeIndex got = %v, want %v", tt.args.writeIndex, tt.expectedWriteIndex),
+			)
 		})
 	}
 }
