@@ -10,6 +10,51 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_GenerateNextState(t *testing.T) {
+	const testSize int = 10
+	type test struct {
+		name string
+		args CellularAutomata[int]
+	}
+	ruleFuncCount := 0
+	tests := []test{
+		{
+			name: "GenerateNextState",
+			args: CellularAutomata[int]{
+				xMax:       testSize,
+				yMax:       testSize,
+				readIndex:  0,
+				writeIndex: 1,
+				ruleFunc: func(c *Cell[int], ca *CellularAutomata[int]) int {
+					ruleFuncCount++
+					return 0
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
+			tt.args.GenerateNextState()
+			wantRuleFuncCount := tt.args.xMax * tt.args.yMax
+			assert.Equal(
+				t, wantRuleFuncCount, ruleFuncCount,
+				fmt.Sprintf("GenerateNextState() ruleFuncCount got = %v, want %v", ruleFuncCount, wantRuleFuncCount),
+			)
+			assert.Equal(
+				t, 1, tt.args.readIndex,
+				fmt.Sprintf("GenerateNextState() readIndex got = %v, want %v", tt.args.readIndex, 1),
+			)
+			assert.Equal(
+				t, 0, tt.args.writeIndex,
+				fmt.Sprintf("GenerateNextState() writeIndex got = %v, want %v", tt.args.writeIndex, 0),
+			)
+			ruleFuncCount = 0
+		})
+	}
+}
+
 func Test_GetCellAt(t *testing.T) {
 	const testSize int = 10
 	type test struct {
