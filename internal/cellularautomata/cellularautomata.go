@@ -59,6 +59,9 @@ func NewCellularAutomata[T any](
 }
 
 func (ca *CellularAutomata[T]) GetImageFromCurrentState() image.Image {
+	if ca.currentImage == nil {
+		ca.currentImage = imagegenerator.CreateNewImage(ca.xMax, ca.yMax)
+	}
 	utils.ForEachWG(
 		ca.cells,
 		func(c *Cell[T]) {

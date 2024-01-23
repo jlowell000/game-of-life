@@ -2,13 +2,68 @@ package cellularautomata
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 	"slices"
 	"testing"
 
+	"github.com/jlowell000/game-of-life/internal/imagegenerator"
 	"github.com/jlowell000/utils"
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_GetImageFromCurrentState(t *testing.T) {
+	const testSize int = 10
+	type test struct {
+		name string
+		args CellularAutomata[int]
+	}
+	testColor := color.NRGBA{R: 255, G: 255, B: 255, A: 255}
+	tests := []test{
+		{
+			name: "GetImageFromCurrentState no inital image",
+			args: CellularAutomata[int]{
+				xMax:       testSize,
+				yMax:       testSize,
+				readIndex:  0,
+				writeIndex: 1,
+				colorFunc: func(i int) color.NRGBA {
+					return testColor
+				},
+			},
+		},
+		{
+			name: "GetImageFromCurrentState inital image",
+			args: CellularAutomata[int]{
+				xMax:         testSize,
+				yMax:         testSize,
+				readIndex:    0,
+				writeIndex:   1,
+				currentImage: imagegenerator.CreateNewImage(testSize, testSize),
+				colorFunc: func(i int) color.NRGBA {
+					return testColor
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
+			want := imagegenerator.CreateNewImage(tt.args.xMax, tt.args.yMax)
+			for y := want.Bounds().Min.Y; y < want.Bounds().Max.Y; y++ {
+				for x := want.Bounds().Min.X; x < want.Bounds().Max.X; x++ {
+					want.Set(x, y, testColor)
+				}
+			}
+			got := tt.args.GetImageFromCurrentState()
+			assert.Equal(
+				t, want, got,
+				"GetImageFromCurrentState() generated image not equal",
+			)
+		})
+	}
+}
 
 func Test_GenerateNextState(t *testing.T) {
 	const testSize int = 10
