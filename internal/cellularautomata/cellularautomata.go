@@ -1,6 +1,7 @@
 package cellularautomata
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"math"
@@ -75,8 +76,14 @@ func (ca *CellularAutomata[T]) GenerateNextState() {
 	ca.swapReadWrite()
 }
 
-func (ca *CellularAutomata[T]) GetCellAt(x, y int) *Cell[T] {
-	return ca.currentState[x][y]
+func (ca *CellularAutomata[T]) GetCellAt(x, y int) (c *Cell[T], err error) {
+	xMinOOB, xMaxOOB, yMinOOB, yMaxOOB := ca.oob(x, y)
+	if xMinOOB || xMaxOOB || yMinOOB || yMaxOOB {
+		err = fmt.Errorf("{x:%d, y:%d} out of range", x, y)
+	} else {
+		c = ca.currentState[x][y]
+	}
+	return
 }
 
 func (ca *CellularAutomata[T]) GetReadWriteIndexes() (readIndex int, writeIndex int) {
@@ -88,7 +95,8 @@ func (ca *CellularAutomata[T]) Bounding(x, y int) *Cell[T] {
 	if (xMinOOB || xMaxOOB) || (yMinOOB || yMaxOOB) {
 		return ca.oobCellFunc(ca, x, y, xMinOOB, xMaxOOB, yMinOOB, yMaxOOB)
 	}
-	return ca.GetCellAt(x, y)
+	c, _ := ca.GetCellAt(x, y)
+	return c
 }
 
 func (ca *CellularAutomata[T]) oob(x, y int) (xMinOOB, xMaxOOB, yMinOOB, yMaxOOB bool) {

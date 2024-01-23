@@ -10,6 +10,58 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_GetCellAt(t *testing.T) {
+	const testSize int = 10
+	type test struct {
+		name string
+		args CellularAutomata[int]
+	}
+	tests := []test{
+		{
+			name: "Bounding",
+			args: CellularAutomata[int]{
+				xMax:        testSize,
+				yMax:        testSize,
+				readIndex:   0,
+				writeIndex:  1,
+				oobCellFunc: LiveOOB,
+			},
+		},
+	}
+
+	assert := func(tt test, c *Cell[int]) {
+		xMinOOB, xMaxOOB, yMinOOB, yMaxOOB := tt.args.oob(c.X, c.Y)
+		got, gotErr := tt.args.GetCellAt(c.X, c.Y)
+		if xMinOOB || xMaxOOB || yMinOOB || yMaxOOB {
+			want := fmt.Errorf("{x:%d, y:%d} out of range", c.X, c.Y)
+			assert.Equal(
+				t, gotErr, want,
+				fmt.Sprintf("GetCellAt() {x:%d, y:%d} got = %v, want %v", c.X, c.Y, got, want),
+			)
+		} else {
+			want := tt.args.currentState[c.X][c.Y]
+			assert.Equal(
+				t, got, want,
+				fmt.Sprintf("GetCellAt() {x:%d, y:%d} got = %v, want %v", c.X, c.Y, got, want),
+			)
+		}
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
+			utils.ForEachWG(tt.args.cells, func(c *Cell[int]) { c.Neighbors = tt.args.getNeighborCells(c) })
+			for _, c := range tt.args.cells {
+				assert(tt, c)
+				for _, n := range c.Neighbors {
+					assert(tt, n)
+				}
+			}
+
+		})
+	}
+}
+
 func Test_GetReadWriteIndexes(t *testing.T) {
 	type test struct {
 		name string

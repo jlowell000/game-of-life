@@ -12,10 +12,11 @@ func OverflowOOB[T any](ca *CellularAutomata[T], x, y int, xMinOOB, xMaxOOB, yMi
 		}
 		return v
 	}
-	return ca.GetCellAt(
+	c, _ := ca.GetCellAt(
 		f(x, 0, ca.xMax-1, xMinOOB, xMaxOOB),
 		f(y, 0, ca.yMax-1, yMinOOB, yMaxOOB),
 	)
+	return c
 }
 
 func NothingOOB[T any](_ *CellularAutomata[T], x, y int, _, _, _, _ bool) *Cell[T] {
