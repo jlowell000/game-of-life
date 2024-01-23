@@ -84,13 +84,18 @@ func (ca *CellularAutomata[T]) GetReadWriteIndexes() (readIndex int, writeIndex 
 }
 
 func (ca *CellularAutomata[T]) Bounding(x, y int) *Cell[T] {
-	vIsOob := func(v, vMin, vMax int) (bool, bool) { return v < vMin, v > vMax }
-	xMinOOB, xMaxOOB := vIsOob(x, 0, ca.xMax-1)
-	yMinOOB, yMaxOOB := vIsOob(y, 0, ca.yMax-1)
+	xMinOOB, xMaxOOB, yMinOOB, yMaxOOB := ca.oob(x, y)
 	if (xMinOOB || xMaxOOB) || (yMinOOB || yMaxOOB) {
 		return ca.oobCellFunc(ca, x, y, xMinOOB, xMaxOOB, yMinOOB, yMaxOOB)
 	}
 	return ca.GetCellAt(x, y)
+}
+
+func (ca *CellularAutomata[T]) oob(x, y int) (xMinOOB, xMaxOOB, yMinOOB, yMaxOOB bool) {
+	vIsOob := func(v, vMin, vMax int) (bool, bool) { return v < vMin, v > vMax }
+	xMinOOB, xMaxOOB = vIsOob(x, 0, ca.xMax-1)
+	yMinOOB, yMaxOOB = vIsOob(y, 0, ca.yMax-1)
+	return
 }
 
 func (ca *CellularAutomata[T]) applyRules(index int, ruleFunc func(*Cell[T], *CellularAutomata[T]) T) {

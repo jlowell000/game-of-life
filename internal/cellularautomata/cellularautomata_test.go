@@ -6,8 +6,169 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jlowell000/utils"
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_GetReadWriteIndexes(t *testing.T) {
+	type test struct {
+		name string
+		args CellularAutomata[int]
+	}
+	tests := []test{
+		{
+			name: "GetReadWriteIndexes",
+			args: CellularAutomata[int]{
+				readIndex:  0,
+				writeIndex: 1,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotR, gotW := tt.args.GetReadWriteIndexes()
+			assert.Equal(
+				t, tt.args.readIndex, gotR,
+				fmt.Sprintf("GetReadWriteIndexes() readIndex got = %v, want %v", gotR, tt.args.readIndex),
+			)
+			assert.Equal(
+				t, tt.args.writeIndex, gotW,
+				fmt.Sprintf("GetReadWriteIndexes() writeIndex got = %v, want %v", gotW, tt.args.writeIndex),
+			)
+		})
+	}
+}
+
+func Test_oob(t *testing.T) {
+	const testSize int = 10
+	type test struct {
+		name string
+		args CellularAutomata[int]
+	}
+	tests := []test{
+		{
+			name: "Bounding",
+			args: CellularAutomata[int]{
+				xMax:        testSize,
+				yMax:        testSize,
+				readIndex:   0,
+				writeIndex:  1,
+				oobCellFunc: LiveOOB,
+			},
+		},
+	}
+
+	assert := func(tt test, c *Cell[int]) {
+		expectFunc := func(c *Cell[int], tt test) (xMinOOB, xMaxOOB, yMinOOB, yMaxOOB bool) {
+			if c.X < 0 {
+				xMinOOB = true
+				xMaxOOB = false
+			} else if c.X > tt.args.xMax-1 {
+				xMinOOB = false
+				xMaxOOB = true
+			} else {
+				xMinOOB = false
+				xMaxOOB = false
+			}
+			if c.Y < 0 {
+				yMinOOB = true
+				yMaxOOB = false
+			} else if c.Y > tt.args.yMax-1 {
+				yMinOOB = false
+				yMaxOOB = true
+			} else {
+				yMinOOB = false
+				yMaxOOB = false
+			}
+
+			return
+		}
+		wantXMinOOB, wantXMaxOOB, wantYMinOOB, wantYMaxOOB := expectFunc(c, tt)
+		gotXMinOOB, gotXMaxOOB, gotYMinOOB, gotYMaxOOB := tt.args.oob(c.X, c.Y)
+		assert.Equal(
+			t, gotXMinOOB, wantXMinOOB,
+			fmt.Sprintf("oob() xMinOOB {x:%d, y:%d} got = %v, want %v", c.X, c.Y, gotXMinOOB, wantXMinOOB),
+		)
+		assert.Equal(
+			t, wantXMaxOOB, gotXMaxOOB,
+			fmt.Sprintf("oob() xMaxOOB {x:%d, y:%d} got = %v, want %v", c.X, c.Y, gotXMaxOOB, wantXMaxOOB),
+		)
+		assert.Equal(
+			t, wantYMinOOB, gotYMinOOB,
+			fmt.Sprintf("oob() yMinOOB {x:%d, y:%d} got = %v, want %v", c.X, c.Y, gotYMinOOB, wantYMinOOB),
+		)
+		assert.Equal(
+			t, wantYMaxOOB, gotYMaxOOB,
+			fmt.Sprintf("oob() yMaxOOB {x:%d, y:%d} got = %v, want %v", c.X, c.Y, gotYMaxOOB, wantYMaxOOB),
+		)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
+			utils.ForEachWG(tt.args.cells, func(c *Cell[int]) { c.Neighbors = tt.args.getNeighborCells(c) })
+			for _, c := range tt.args.cells {
+				assert(tt, c)
+				for _, n := range c.Neighbors {
+					assert(tt, n)
+				}
+			}
+
+		})
+	}
+}
+
+func Test_Bounding(t *testing.T) {
+	const testSize int = 10
+	type test struct {
+		name       string
+		args       CellularAutomata[int]
+		expectFunc func(*Cell[int], test) int
+	}
+	tests := []test{
+		{
+			name: "Bounding",
+			args: CellularAutomata[int]{
+				xMax:        testSize,
+				yMax:        testSize,
+				readIndex:   0,
+				writeIndex:  1,
+				oobCellFunc: LiveOOB,
+			},
+			expectFunc: func(c *Cell[int], tt test) int {
+				xMinOOB, xMaxOOB, yMinOOB, yMaxOOB := tt.args.oob(c.X, c.Y)
+				if (xMinOOB || xMaxOOB) || (yMinOOB || yMaxOOB) {
+					return 1
+				}
+				return 0
+			},
+		},
+	}
+
+	assert := func(tt test, c *Cell[int]) {
+		want := tt.expectFunc(c, tt)
+		got := tt.args.Bounding(c.X, c.Y).State[tt.args.readIndex]
+		assert.Equal(
+			t, want, got,
+			fmt.Sprintf("Bounding() {x:%d, y:%d} got = %v, want %v", c.X, c.Y, got, want),
+		)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.currentState, tt.args.cells = makeCellTable[int](tt.args.xMax, tt.args.yMax)
+			utils.ForEachWG(tt.args.cells, func(c *Cell[int]) { c.Neighbors = tt.args.getNeighborCells(c) })
+			for _, c := range tt.args.cells {
+				assert(tt, c)
+				for _, n := range c.Neighbors {
+					assert(tt, n)
+				}
+			}
+
+		})
+	}
+}
 
 func Test_applyRules(t *testing.T) {
 	const testSize int = 10
@@ -17,7 +178,7 @@ func Test_applyRules(t *testing.T) {
 		expectFunc func(*Cell[int]) int
 	}{
 		{
-			name: "initial readIndex: 0, writeIndex: 1",
+			name: "func is called on all cells",
 			args: CellularAutomata[int]{
 				xMax:       testSize,
 				yMax:       testSize,
