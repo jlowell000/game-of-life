@@ -21,6 +21,7 @@ func NewGameOfLifeGenerator(xMax, yMax int) *cellularautomata.CellularAutomata[b
 			c *cellularautomata.Cell[bool],
 			ca *cellularautomata.CellularAutomata[bool],
 		) bool {
+			readIndex, _ := ca.GetReadWriteIndexes()
 			numberOfLiveNeighbors := 0
 			utils.ForEach(
 				c.Neighbors,
@@ -29,13 +30,13 @@ func NewGameOfLifeGenerator(xMax, yMax int) *cellularautomata.CellularAutomata[b
 						newBoundCell := ca.Bounding(nc.X, nc.Y)
 						nc.State = newBoundCell.State
 					}
-					if nc.State[ca.ReadIndex] {
+					if nc.State[readIndex] {
 						numberOfLiveNeighbors++
 					}
 				},
 			)
 
-			if c.State[ca.ReadIndex] {
+			if c.State[readIndex] {
 				return numberOfLiveNeighbors >= 2 && numberOfLiveNeighbors <= 3
 			} else {
 				return numberOfLiveNeighbors == 3
